@@ -74,16 +74,25 @@ const sizes: Record<Device, { w: number; h: number }> = {
 
 export function PreviewPane() {
   const files = useIDE((s) => s.files);
+  const activeTab = useIDE((s) => s.activeTab);
+  const theme = useIDE((s) => s.theme);
   const [device, setDevice] = useState<Device>("desktop");
   const [nonce, setNonce] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const srcDoc = useMemo(() => buildPreviewHtml(files), [files]);
+  const active = activeTab ? files[activeTab] : null;
+  const isMarkdown = !!active && active.type === "file" && /\.mdx?$/i.test(active.name);
+  const [modeOverride, setModeOverride] = useState<PreviewMode | null>(null);
+  const mode: PreviewMode = modeOverride ?? (isMarkdown ? "markdown" : "html");
 
-  // Hot reload: debounce already happens via React render of files map
-  useEffect(() => {
-    // no-op; included to satisfy hot-reload semantics
-  }, [srcDoc]);
+  const srcDoc = useMemo(() => {
+    if (mode === "markdown" && active && active.type === "file") {
+      return buildMarkdownHtml(active.content ?? "", theme === "dark");
+    }
+    return buildPreviewHtml(files);
+  }, [mode, files, active, theme]);
+
+  useEffect(() => { /* hot reload via memo */ }, [srcDoc]);
 
   const openInNewTab = () => {
     const blob = new Blob([srcDoc], { type: "text/html" });
@@ -95,7 +104,23 @@ export function PreviewPane() {
   return (
     <div className="flex h-full w-full flex-col bg-titlebar">
       <div className="flex h-8 shrink-0 items-center justify-between border-b border-border px-2 text-xs">
-        <div className="font-semibold uppercase tracking-wider text-muted-foreground">Preview</div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold uppercase tracking-wider text-muted-foreground">{mode === "markdown" ? "Markdown" : "Preview"}</span>
+          {isMarkdown && (
+            <div className="flex items-center gap-0.5 rounded border border-border">
+              <button
+                onClick={() => setModeOverride("markdown")}
+                className={cn("grid h-5 w-6 place-items-center text-muted-foreground hover:text-foreground", mode === "markdown" && "bg-accent text-foreground")}
+                title="Render markdown"
+              ><FileText className="h-3 w-3" /></button>
+              <button
+                onClick={() => setModeOverride("html")}
+                className={cn("grid h-5 w-6 place-items-center text-muted-foreground hover:text-foreground", mode === "html" && "bg-accent text-foreground")}
+                title="Live HTML preview"
+              ><FileCode className="h-3 w-3" /></button>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           {(["desktop", "tablet", "mobile"] as Device[]).map((d) => {
             const Icon = d === "desktop" ? Monitor : d === "tablet" ? Tablet : Smartphone;
