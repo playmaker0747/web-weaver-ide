@@ -10,7 +10,7 @@ import {
   saveNode,
 } from "./fs";
 
-export type PanelId = "explorer" | "search" | "extensions" | "settings";
+export type PanelId = "explorer" | "search" | "ai" | "extensions" | "settings";
 
 interface IDEState {
   files: Record<string, FileNode>;

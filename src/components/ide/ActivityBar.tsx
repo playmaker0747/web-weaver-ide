@@ -1,10 +1,11 @@
-import { Files, Search, Puzzle, Settings, Sun, Moon, Terminal as TerminalIcon, Eye } from "lucide-react";
+import { Files, Search, Puzzle, Settings, Sun, Moon, Terminal as TerminalIcon, Eye, Sparkles } from "lucide-react";
 import { useIDE, type PanelId } from "@/lib/ide/store";
 import { cn } from "@/lib/utils";
 
 const items: { id: PanelId; icon: typeof Files; label: string }[] = [
   { id: "explorer", icon: Files, label: "Explorer" },
   { id: "search", icon: Search, label: "Search" },
+  { id: "ai", icon: Sparkles, label: "AI Assistant" },
   { id: "extensions", icon: Puzzle, label: "Extensions" },
   { id: "settings", icon: Settings, label: "Settings" },
 ];
