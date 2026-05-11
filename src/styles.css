@@ -151,9 +151,30 @@
   * {
     border-color: var(--color-border);
   }
-
+  html, body, #root {
+    height: 100%;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--foreground) 15%, transparent);
+    border-radius: 5px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--foreground) 30%, transparent);
+  }
+}
+
+@layer utilities {
+  .font-mono { font-family: var(--font-mono); }
+  .codeforge-resizer[data-panel-resize-handle-enabled="true"]:hover {
+    background-color: var(--color-primary);
   }
 }
