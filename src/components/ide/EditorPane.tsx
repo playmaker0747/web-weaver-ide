@@ -46,7 +46,17 @@ export function EditorPane() {
         language={language === "plaintext" ? "plaintext" : language}
         value={file.content ?? ""}
         theme={theme === "dark" ? "vs-dark" : "vs"}
-        onMount={(editor) => { editorRef.current = editor; }}
+        onMount={(editor, monaco) => {
+          editorRef.current = editor;
+          // Format on save: Cmd/Ctrl+S
+          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+            editor.getAction("editor.action.formatDocument")?.run();
+          });
+          // Quick format: Shift+Alt+F
+          editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
+            editor.getAction("editor.action.formatDocument")?.run();
+          });
+        }}
         onChange={(v) => update(file.id, v ?? "")}
         options={{
           fontSize,
@@ -63,6 +73,7 @@ export function EditorPane() {
           automaticLayout: true,
           tabSize: 2,
           wordWrap: "on",
+          formatOnPaste: true,
           padding: { top: 12 },
         }}
       />

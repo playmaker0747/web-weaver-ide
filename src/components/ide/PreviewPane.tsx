@@ -1,7 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { marked } from "marked";
 import { useIDE } from "@/lib/ide/store";
-import { RotateCw, ExternalLink, Smartphone, Monitor, Tablet } from "lucide-react";
+import { RotateCw, ExternalLink, Smartphone, Monitor, Tablet, FileCode, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type PreviewMode = "html" | "markdown";
+
+function buildMarkdownHtml(body: string, dark: boolean): string {
+  const html = marked.parse(body || "", { breaks: true, gfm: true }) as string;
+  const bg = dark ? "#1e1e1e" : "#ffffff";
+  const fg = dark ? "#d4d4d4" : "#1f2328";
+  const muted = dark ? "#9ca3af" : "#57606a";
+  const border = dark ? "#2d2d2d" : "#d0d7de";
+  const codeBg = dark ? "#0d1117" : "#f6f8fa";
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    body{font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:820px;margin:0 auto;padding:32px;color:${fg};background:${bg};}
+    h1,h2,h3,h4{font-weight:600;line-height:1.25;margin:24px 0 12px;}
+    h1{font-size:2em;border-bottom:1px solid ${border};padding-bottom:6px;}
+    h2{font-size:1.5em;border-bottom:1px solid ${border};padding-bottom:6px;}
+    a{color:#3b82f6;text-decoration:none;} a:hover{text-decoration:underline;}
+    code{background:${codeBg};padding:2px 6px;border-radius:4px;font-family:ui-monospace,Menlo,monospace;font-size:.9em;}
+    pre{background:${codeBg};padding:12px;border-radius:6px;overflow:auto;}
+    pre code{background:transparent;padding:0;}
+    blockquote{border-left:3px solid ${border};color:${muted};padding:0 12px;margin:12px 0;}
+    table{border-collapse:collapse;margin:12px 0;}
+    th,td{border:1px solid ${border};padding:6px 12px;}
+    img{max-width:100%;}
+    hr{border:none;border-top:1px solid ${border};margin:24px 0;}
+  </style></head><body>${html}</body></html>`;
+}
 
 function buildPreviewHtml(files: Record<string, { id: string; name: string; type: string; content?: string }>): string {
   const index = files["/index.html"];
@@ -47,16 +74,25 @@ const sizes: Record<Device, { w: number; h: number }> = {
 
 export function PreviewPane() {
   const files = useIDE((s) => s.files);
+  const activeTab = useIDE((s) => s.activeTab);
+  const theme = useIDE((s) => s.theme);
   const [device, setDevice] = useState<Device>("desktop");
   const [nonce, setNonce] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const srcDoc = useMemo(() => buildPreviewHtml(files), [files]);
+  const active = activeTab ? files[activeTab] : null;
+  const isMarkdown = !!active && active.type === "file" && /\.mdx?$/i.test(active.name);
+  const [modeOverride, setModeOverride] = useState<PreviewMode | null>(null);
+  const mode: PreviewMode = modeOverride ?? (isMarkdown ? "markdown" : "html");
 
-  // Hot reload: debounce already happens via React render of files map
-  useEffect(() => {
-    // no-op; included to satisfy hot-reload semantics
-  }, [srcDoc]);
+  const srcDoc = useMemo(() => {
+    if (mode === "markdown" && active && active.type === "file") {
+      return buildMarkdownHtml(active.content ?? "", theme === "dark");
+    }
+    return buildPreviewHtml(files);
+  }, [mode, files, active, theme]);
+
+  useEffect(() => { /* hot reload via memo */ }, [srcDoc]);
 
   const openInNewTab = () => {
     const blob = new Blob([srcDoc], { type: "text/html" });
@@ -68,7 +104,23 @@ export function PreviewPane() {
   return (
     <div className="flex h-full w-full flex-col bg-titlebar">
       <div className="flex h-8 shrink-0 items-center justify-between border-b border-border px-2 text-xs">
-        <div className="font-semibold uppercase tracking-wider text-muted-foreground">Preview</div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold uppercase tracking-wider text-muted-foreground">{mode === "markdown" ? "Markdown" : "Preview"}</span>
+          {isMarkdown && (
+            <div className="flex items-center gap-0.5 rounded border border-border">
+              <button
+                onClick={() => setModeOverride("markdown")}
+                className={cn("grid h-5 w-6 place-items-center text-muted-foreground hover:text-foreground", mode === "markdown" && "bg-accent text-foreground")}
+                title="Render markdown"
+              ><FileText className="h-3 w-3" /></button>
+              <button
+                onClick={() => setModeOverride("html")}
+                className={cn("grid h-5 w-6 place-items-center text-muted-foreground hover:text-foreground", mode === "html" && "bg-accent text-foreground")}
+                title="Live HTML preview"
+              ><FileCode className="h-3 w-3" /></button>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           {(["desktop", "tablet", "mobile"] as Device[]).map((d) => {
             const Icon = d === "desktop" ? Monitor : d === "tablet" ? Tablet : Smartphone;
