@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useIDE } from "@/lib/ide/store";
 import { iconForFilename } from "@/lib/ide/language";
 import { cn } from "@/lib/utils";
+import { useWorkspacePresence } from "@/lib/ide/collab";
 
 export function Tabs() {
   const openTabs = useIDE((s) => s.openTabs);
@@ -9,6 +10,7 @@ export function Tabs() {
   const files = useIDE((s) => s.files);
   const setActiveTab = useIDE((s) => s.setActiveTab);
   const closeTab = useIDE((s) => s.closeTab);
+  const presence = useWorkspacePresence(openTabs);
 
   if (openTabs.length === 0) return <div className="h-9 border-b border-border bg-titlebar" />;
 
@@ -18,6 +20,7 @@ export function Tabs() {
         const f = files[id];
         if (!f) return null;
         const active = activeTab === id;
+        const tabPeers = presence[id] ?? [];
         return (
           <div
             key={id}
@@ -29,6 +32,18 @@ export function Tabs() {
           >
             <span className="text-[11px]">{iconForFilename(f.name)}</span>
             <span className="max-w-[160px] truncate">{f.name}</span>
+            {tabPeers.length > 0 && (
+              <span className="flex -space-x-1">
+                {tabPeers.slice(0, 3).map((p) => (
+                  <span
+                    key={p.id}
+                    title={p.name}
+                    className="h-2.5 w-2.5 rounded-full border border-background"
+                    style={{ backgroundColor: p.color }}
+                  />
+                ))}
+              </span>
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); closeTab(id); }}
               className="grid h-4 w-4 place-items-center rounded text-muted-foreground opacity-60 hover:bg-accent hover:opacity-100"
