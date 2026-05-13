@@ -50,17 +50,49 @@ interface CursorMsg {
   selection?: { startLine: number; startCol: number; endLine: number; endCol: number };
 }
 
+/* ----- Debug logging ----- */
+export type RealtimeStatus = "idle" | "connecting" | "subscribed" | "closed" | "error" | "timed_out";
+
+export function isDebugEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem("codeforge.debug") === "1" ||
+      (window as unknown as { __CF_DEBUG__?: boolean }).__CF_DEBUG__ === true;
+  } catch { return false; }
+}
+export function setDebugEnabled(on: boolean) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("codeforge.debug", on ? "1" : "0");
+  debugLog("workspace", `debug ${on ? "ENABLED" : "disabled"}`);
+}
+export function debugLog(channel: string, ...args: unknown[]) {
+  if (!isDebugEnabled()) return;
+  // eslint-disable-next-line no-console
+  console.log(`%c[realtime:${channel}]`, "color:#22c55e;font-weight:600", ...args);
+}
+
 /* ----- Workspace presence singleton ----- */
 type Listener = (byFile: Record<string, PresenceUser[]>) => void;
+type StatusListener = (status: RealtimeStatus) => void;
 let wsChannel: ReturnType<typeof supabase.channel> | null = null;
 let wsState: Record<string, PresenceUser[]> = {};
 let wsActiveFile: string | null = null;
+let wsStatus: RealtimeStatus = "idle";
 const wsListeners = new Set<Listener>();
+const wsStatusListeners = new Set<StatusListener>();
 let wsSubscribed = false;
+
+function setWsStatus(s: RealtimeStatus) {
+  wsStatus = s;
+  debugLog("workspace", "status →", s);
+  wsStatusListeners.forEach((l) => l(s));
+}
+export function getWorkspaceStatus(): RealtimeStatus { return wsStatus; }
 
 function ensureWorkspaceChannel() {
   if (wsChannel) return wsChannel;
   const me = getIdentity();
+  setWsStatus("connecting");
   const channel = supabase.channel("codeforge:workspace", {
     config: { presence: { key: me.id } },
   });
@@ -68,21 +100,34 @@ function ensureWorkspaceChannel() {
     .on("presence", { event: "sync" }, () => {
       const state = channel.presenceState() as Record<string, Array<PresenceUser>>;
       const next: Record<string, PresenceUser[]> = {};
+      let count = 0;
       for (const arr of Object.values(state)) {
         for (const u of arr) {
           if (u.id === me.id) continue;
           const f = u.fileId ?? "__none__";
           (next[f] ||= []).push(u);
+          count++;
         }
       }
       wsState = next;
+      debugLog("workspace", `presence sync (${count} peers)`);
       wsListeners.forEach((l) => l(next));
     })
+    .on("presence", { event: "join" }, ({ key, newPresences }) => {
+      debugLog("workspace", "join", key, newPresences);
+    })
+    .on("presence", { event: "leave" }, ({ key }) => {
+      debugLog("workspace", "leave", key);
+    })
     .subscribe(async (status) => {
+      debugLog("workspace", "subscribe status:", status);
       if (status === "SUBSCRIBED") {
         wsSubscribed = true;
+        setWsStatus("subscribed");
         await channel.track({ ...me, fileId: wsActiveFile });
-      }
+      } else if (status === "CHANNEL_ERROR") setWsStatus("error");
+      else if (status === "TIMED_OUT") setWsStatus("timed_out");
+      else if (status === "CLOSED") { wsSubscribed = false; setWsStatus("closed"); }
     });
   wsChannel = channel;
   return channel;
@@ -101,6 +146,19 @@ export function useWorkspacePresence(_fileIds: string[]) {
   return byFile;
 }
 
+/** Subscribe to the workspace realtime connection status. */
+export function useWorkspaceStatus(): RealtimeStatus {
+  const [status, setStatus] = useState<RealtimeStatus>(wsStatus);
+  useEffect(() => {
+    ensureWorkspaceChannel();
+    const l: StatusListener = (s) => setStatus(s);
+    wsStatusListeners.add(l);
+    setStatus(wsStatus);
+    return () => { wsStatusListeners.delete(l); };
+  }, []);
+  return status;
+}
+
 /** Update workspace presence with the user's currently active file. */
 export function useTrackActiveFile(fileId: string | null) {
   useEffect(() => {
@@ -108,6 +166,7 @@ export function useTrackActiveFile(fileId: string | null) {
     const ch = ensureWorkspaceChannel();
     if (wsSubscribed) {
       const me = getIdentity();
+      debugLog("workspace", "track active file →", fileId);
       void ch.track({ ...me, fileId });
     }
   }, [fileId]);
@@ -214,6 +273,7 @@ export function useFileCollab(
         }
       })
       .subscribe(async (status) => {
+        debugLog(`file:${fileId}`, "subscribe status:", status);
         if (status === "SUBSCRIBED") {
           await channel.track({ ...me, fileId });
         }
