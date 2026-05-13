@@ -113,7 +113,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <GlobalErrorBoundary>
+        <Outlet />
+      </GlobalErrorBoundary>
     </QueryClientProvider>
   );
 }
