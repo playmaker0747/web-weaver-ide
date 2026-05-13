@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { GlobalErrorBoundary } from "@/components/ErrorBoundary";
 
 function NotFoundComponent() {
   return (
