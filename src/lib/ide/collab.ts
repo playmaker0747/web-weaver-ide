@@ -273,6 +273,7 @@ export function useFileCollab(
         }
       })
       .subscribe(async (status) => {
+        debugLog(`file:${fileId}`, "subscribe status:", status);
         if (status === "SUBSCRIBED") {
           await channel.track({ ...me, fileId });
         }
