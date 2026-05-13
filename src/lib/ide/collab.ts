@@ -50,49 +50,64 @@ interface CursorMsg {
   selection?: { startLine: number; startCol: number; endLine: number; endCol: number };
 }
 
-/** Subscribe to presence across ALL files (one channel for the workspace). */
-export function useWorkspacePresence(fileIds: string[]) {
-  const [byFile, setByFile] = useState<Record<string, PresenceUser[]>>({});
-  const me = useRef(getIdentity());
-  const activeFileRef = useRef<string | null>(null);
+/* ----- Workspace presence singleton ----- */
+type Listener = (byFile: Record<string, PresenceUser[]>) => void;
+let wsChannel: ReturnType<typeof supabase.channel> | null = null;
+let wsState: Record<string, PresenceUser[]> = {};
+let wsActiveFile: string | null = null;
+const wsListeners = new Set<Listener>();
+let wsSubscribed = false;
 
-  // We use one channel per fileId in a registry; but for tabs we need per-file counts.
-  // Simpler: maintain one channel "codeforge:workspace" with presence including fileId.
-  useEffect(() => {
-    const channel = supabase.channel("codeforge:workspace", {
-      config: { presence: { key: me.current.id } },
+function ensureWorkspaceChannel() {
+  if (wsChannel) return wsChannel;
+  const me = getIdentity();
+  const channel = supabase.channel("codeforge:workspace", {
+    config: { presence: { key: me.id } },
+  });
+  channel
+    .on("presence", { event: "sync" }, () => {
+      const state = channel.presenceState() as Record<string, Array<PresenceUser>>;
+      const next: Record<string, PresenceUser[]> = {};
+      for (const arr of Object.values(state)) {
+        for (const u of arr) {
+          if (u.id === me.id) continue;
+          const f = u.fileId ?? "__none__";
+          (next[f] ||= []).push(u);
+        }
+      }
+      wsState = next;
+      wsListeners.forEach((l) => l(next));
+    })
+    .subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        wsSubscribed = true;
+        await channel.track({ ...me, fileId: wsActiveFile });
+      }
     });
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState() as Record<string, Array<PresenceUser>>;
-        const next: Record<string, PresenceUser[]> = {};
-        for (const arr of Object.values(state)) {
-          for (const u of arr) {
-            if (u.id === me.current.id) continue;
-            const f = u.fileId ?? "__none__";
-            (next[f] ||= []).push(u);
-          }
-        }
-        setByFile(next);
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({ ...me.current, fileId: activeFileRef.current });
-        }
-      });
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+  wsChannel = channel;
+  return channel;
+}
 
-  // Update tracked fileId when ids change is not needed; cursors handle live focus.
+/** Subscribe to presence across ALL files (one channel for the workspace). */
+export function useWorkspacePresence(_fileIds: string[]) {
+  const [byFile, setByFile] = useState<Record<string, PresenceUser[]>>(wsState);
+  useEffect(() => {
+    ensureWorkspaceChannel();
+    const l: Listener = (s) => setByFile(s);
+    wsListeners.add(l);
+    setByFile(wsState);
+    return () => { wsListeners.delete(l); };
+  }, []);
   return byFile;
 }
 
 /** Update workspace presence with the user's currently active file. */
 export function useTrackActiveFile(fileId: string | null) {
   useEffect(() => {
-    const me = getIdentity();
-    const ch = supabase.getChannels().find((c) => c.topic === "realtime:codeforge:workspace");
-    if (ch && ch.state === "joined") {
+    wsActiveFile = fileId;
+    const ch = ensureWorkspaceChannel();
+    if (wsSubscribed) {
+      const me = getIdentity();
       void ch.track({ ...me, fileId });
     }
   }, [fileId]);
