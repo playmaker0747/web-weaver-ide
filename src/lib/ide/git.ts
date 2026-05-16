@@ -103,7 +103,7 @@ export async function status(files: Record<string, FileNode>): Promise<GitStatus
     if (head === 0 && workdir === 0) continue;
     if (head === 0 && workdir === 2) out.push({ path, status: staged ? "added" : "untracked", staged });
     else if (head === 1 && workdir === 0) out.push({ path, status: "deleted", staged });
-    else if (head === 1 && workdir === 2 && head !== workdir) out.push({ path, status: "modified", staged });
+    else if (head === 1 && workdir === 2) out.push({ path, status: "modified", staged });
     else if (head === 1 && workdir === 1 && stage !== 1) out.push({ path, status: "staged", staged: true });
   }
   return out;
