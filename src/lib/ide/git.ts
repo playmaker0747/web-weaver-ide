@@ -14,8 +14,17 @@ const NAME_KEY = "codeforge.git.name";
 const EMAIL_KEY = "codeforge.git.email";
 const STASH_KEY = "codeforge.git.stash";
 
-const fs = new FS("codeforge-git");
-const pfs: any = fs.promises;
+let _fs: any = null;
+let _pfs: any = null;
+function getFs() {
+  if (!_fs) {
+    _fs = new FS("codeforge-git");
+    _pfs = _fs.promises;
+  }
+  return _fs;
+}
+const fs = new Proxy({}, { get: (_t, p) => (getFs() as any)[p] }) as any;
+const pfs: any = new Proxy({}, { get: (_t, p) => { getFs(); return _pfs[p]; } });
 
 async function ensureRepo() {
   try { await pfs.mkdir(DIR); } catch {/* exists */}
