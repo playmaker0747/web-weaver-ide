@@ -5,6 +5,7 @@ import { ActivityBar } from "./ActivityBar";
 import { Explorer } from "./Explorer";
 import { SearchPanel } from "./SearchPanel";
 import { ExtensionsPanel, SettingsPanel } from "./SidebarPanels";
+import { SourceControlPanel } from "./SourceControlPanel";
 import { AIAssistant } from "./AIAssistant";
 import { Tabs } from "./Tabs";
 import { EditorPane } from "./EditorPane";
@@ -18,6 +19,7 @@ function SidebarBody() {
   const panel = useIDE((s) => s.activePanel);
   if (panel === "explorer") return <Explorer />;
   if (panel === "search") return <SearchPanel />;
+  if (panel === "git") return <SourceControlPanel />;
   if (panel === "ai") return <AIAssistant />;
   if (panel === "extensions") return <ExtensionsPanel />;
   return <SettingsPanel />;
