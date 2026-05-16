@@ -14,16 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_collaborators: {
+        Row: {
+          added_at: string
+          project_id: string
+          role: Database["public"]["Enums"]["collab_role"]
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          project_id: string
+          role?: Database["public"]["Enums"]["collab_role"]
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          project_id?: string
+          role?: Database["public"]["Enums"]["collab_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_collaborators_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_files: {
+        Row: {
+          content: string | null
+          id: string
+          name: string
+          parent_path: string
+          path: string
+          project_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          id?: string
+          name: string
+          parent_path?: string
+          path: string
+          project_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          id?: string
+          name?: string
+          parent_path?: string
+          path?: string
+          project_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          collab_token: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          owner_id: string
+          share_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          collab_token?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          owner_id: string
+          share_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          collab_token?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          owner_id?: string
+          share_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_project_member: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_project_owner: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      collab_role: "editor" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +286,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      collab_role: ["editor", "viewer"],
+    },
   },
 } as const
