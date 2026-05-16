@@ -147,10 +147,10 @@ export const rotateProjectTokens = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, string> = {};
     const rnd = () =>
       Array.from(crypto.getRandomValues(new Uint8Array(16)))
         .map((b) => b.toString(16).padStart(2, "0")).join("");
+    const patch: { share_token?: string; collab_token?: string } = {};
     if (data.rotateShare) patch.share_token = rnd();
     if (data.rotateCollab) patch.collab_token = rnd();
     if (Object.keys(patch).length === 0) return { ok: true };
