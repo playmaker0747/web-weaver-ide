@@ -4,13 +4,17 @@
   "framework": "vite",
   "functions": {
     ".output/server/**/*.js": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs18.x"
     }
   },
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/api/(.*)",
       "dest": "/.output/server/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/.output/public/index.html"
     }
   ]
 }
