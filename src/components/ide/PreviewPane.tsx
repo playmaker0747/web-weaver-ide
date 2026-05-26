@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import { useIDE } from "@/lib/ide/store";
-import { RotateCw, ExternalLink, Smartphone, Monitor, Tablet, FileCode, FileText } from "lucide-react";
+import { RotateCw, ExternalLink, Smartphone, Monitor, Tablet, FileCode, FileText, Globe, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type PreviewMode = "html" | "markdown";
