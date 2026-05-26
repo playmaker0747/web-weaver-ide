@@ -31,6 +31,7 @@ export function StatusBar() {
   const status = useWorkspaceStatus();
   const me = useMemo(() => (typeof window !== "undefined" ? getIdentity() : null), []);
   const [debug, setDebug] = useState(() => isDebugEnabled());
+  const online = useOnlineStatus();
   const totalPeers = useMemo(() => {
     const seen = new Set<string>();
     for (const arr of Object.values(presence)) for (const p of arr) seen.add(p.id);
