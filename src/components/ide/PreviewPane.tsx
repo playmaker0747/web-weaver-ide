@@ -79,7 +79,18 @@ export function PreviewPane() {
   const theme = useIDE((s) => s.theme);
   const [device, setDevice] = useState<Device>("desktop");
   const [nonce, setNonce] = useState(0);
+  const [liveOpen, setLiveOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [swReady, setSwReady] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const check = () => setSwReady(!!navigator.serviceWorker.controller);
+    check();
+    navigator.serviceWorker.addEventListener("controllerchange", check);
+    return () => navigator.serviceWorker.removeEventListener("controllerchange", check);
+  }, []);
 
   const active = activeTab ? files[activeTab] : null;
   const isMarkdown = !!active && active.type === "file" && /\.mdx?$/i.test(active.name);
@@ -95,11 +106,27 @@ export function PreviewPane() {
 
   useEffect(() => { /* hot reload via memo */ }, [srcDoc]);
 
+  const liveUrl = typeof window !== "undefined" ? `${window.location.origin}/__live/index.html` : "";
+
   const openInNewTab = () => {
+    if (swReady) {
+      window.open(liveUrl, "_blank", "noopener");
+      return;
+    }
     const blob = new Blob([srcDoc], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank");
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  };
+
+  const copyLiveUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(liveUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Copy failed");
+    }
   };
 
   return (
