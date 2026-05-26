@@ -1,13 +1,10 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "public": false,
-  "framework": "vite",
+  "outputDirectory": "dist/client",
+  "env": {
+    "NODE_ENV": "production"
+  },
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
     {
       "source": "/:path*",
       "destination": "/index.html"
