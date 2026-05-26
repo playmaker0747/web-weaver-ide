@@ -10,6 +10,8 @@ import {
 
 import appCss from "../styles.css?url";
 import { GlobalErrorBoundary } from "@/components/ErrorBoundary";
+import { useEffect } from "react";
+import { registerServiceWorker } from "@/lib/pwa";
 
 function NotFoundComponent() {
   return (
