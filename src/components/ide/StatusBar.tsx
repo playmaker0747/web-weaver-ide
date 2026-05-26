@@ -10,6 +10,7 @@ import {
   type RealtimeStatus,
 } from "@/lib/ide/collab";
 import { useMemo, useState } from "react";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 const STATUS_META: Record<RealtimeStatus, { label: string; color: string; Icon: typeof Wifi }> = {
   idle:        { label: "Realtime: idle",        color: "bg-muted-foreground", Icon: WifiOff },
@@ -30,6 +31,7 @@ export function StatusBar() {
   const status = useWorkspaceStatus();
   const me = useMemo(() => (typeof window !== "undefined" ? getIdentity() : null), []);
   const [debug, setDebug] = useState(() => isDebugEnabled());
+  const online = useOnlineStatus();
   const totalPeers = useMemo(() => {
     const seen = new Set<string>();
     for (const arr of Object.values(presence)) for (const p of arr) seen.add(p.id);
@@ -43,6 +45,10 @@ export function StatusBar() {
     <div className="flex h-6 shrink-0 items-center justify-between bg-statusbar px-3 text-[11px] text-statusbar-foreground">
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1"><GitBranch className="h-3 w-3" /> main</span>
+        <span className="flex items-center gap-1" title={online ? "Online" : "Offline — your work is saved locally"}>
+          {online ? <Wifi className="h-3 w-3 text-green-400" /> : <WifiOff className="h-3 w-3 text-amber-400" />}
+          {online ? "online" : "offline"}
+        </span>
         <span className="flex items-center gap-1"><Check className="h-3 w-3" /> 0 errors, 0 warnings</span>
         <span className="flex items-center gap-1" title={meta.label}>
           <StatusIcon className={`h-3 w-3 ${status === "connecting" ? "animate-spin" : ""}`} />
