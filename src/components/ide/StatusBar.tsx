@@ -45,6 +45,10 @@ export function StatusBar() {
     <div className="flex h-6 shrink-0 items-center justify-between bg-statusbar px-3 text-[11px] text-statusbar-foreground">
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1"><GitBranch className="h-3 w-3" /> main</span>
+        <span className="flex items-center gap-1" title={online ? "Online" : "Offline — your work is saved locally"}>
+          {online ? <Wifi className="h-3 w-3 text-green-400" /> : <WifiOff className="h-3 w-3 text-amber-400" />}
+          {online ? "online" : "offline"}
+        </span>
         <span className="flex items-center gap-1"><Check className="h-3 w-3" /> 0 errors, 0 warnings</span>
         <span className="flex items-center gap-1" title={meta.label}>
           <StatusIcon className={`h-3 w-3 ${status === "connecting" ? "animate-spin" : ""}`} />
