@@ -2,14 +2,15 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".output/public",
   "framework": "vite",
+  "functions": {
+    ".output/server/**/*.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/.output/server"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/.output/server/index.js"
     }
   ]
 }
