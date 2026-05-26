@@ -10,6 +10,7 @@ import {
   type RealtimeStatus,
 } from "@/lib/ide/collab";
 import { useMemo, useState } from "react";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 const STATUS_META: Record<RealtimeStatus, { label: string; color: string; Icon: typeof Wifi }> = {
   idle:        { label: "Realtime: idle",        color: "bg-muted-foreground", Icon: WifiOff },
