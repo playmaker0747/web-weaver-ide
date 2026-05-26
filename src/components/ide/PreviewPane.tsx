@@ -170,11 +170,55 @@ export function PreviewPane() {
           <button onClick={() => setNonce((n) => n + 1)} title="Reload" className="grid h-6 w-6 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground">
             <RotateCw className="h-3.5 w-3.5" />
           </button>
+          <button
+            onClick={() => setLiveOpen((v) => !v)}
+            title={swReady ? "Live Server (running)" : "Live Server (needs published site)"}
+            className={cn(
+              "grid h-6 w-6 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground",
+              swReady && "text-green-400",
+            )}
+          >
+            <Globe className="h-3.5 w-3.5" />
+          </button>
           <button onClick={openInNewTab} title="Open in new tab" className="grid h-6 w-6 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground">
             <ExternalLink className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
+      {liveOpen && (
+        <div className="border-b border-border bg-background/60 p-3 text-xs">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className={cn("h-2 w-2 rounded-full", swReady ? "bg-green-400" : "bg-amber-400")} />
+              <span className="font-semibold">Live Server</span>
+              <span className="text-muted-foreground">{swReady ? "running" : "inactive (open the published site)"}</span>
+            </div>
+            <button onClick={() => setLiveOpen(false)} className="text-muted-foreground hover:text-foreground">×</button>
+          </div>
+          <div className="flex items-center gap-1 rounded border border-border bg-background p-1">
+            <input
+              readOnly
+              value={liveUrl}
+              className="min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[11px] outline-none"
+            />
+            <button onClick={copyLiveUrl} className="flex items-center gap-1 rounded px-2 py-1 hover:bg-accent">
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+            <button
+              onClick={() => window.open(liveUrl, "_blank", "noopener")}
+              disabled={!swReady}
+              className="flex items-center gap-1 rounded bg-primary px-2 py-1 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <ExternalLink className="h-3 w-3" /> Open
+            </button>
+          </div>
+          <p className="mt-2 leading-relaxed text-muted-foreground">
+            Serves your <code className="rounded bg-muted px-1">/index.html</code> + linked files via a service worker, with auto-reload on save.
+            {!swReady && " Available on the published site (service workers are blocked in the editor preview)."}
+          </p>
+        </div>
+      )}
       <div className="grid flex-1 place-items-center overflow-auto bg-[color-mix(in_oklab,var(--color-background)_70%,black_30%)] p-3">
         <iframe
           key={nonce}
