@@ -1,11 +1,25 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/client",
+  "outputDirectory": "dist",
+  "public": false,
+  "framework": "vite",
   "serverless": {
     "default": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs20.x",
+      "memory": 3008,
+      "maxDuration": 60
     }
   },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/:path*(svg|jpg|jpeg|png|gif|ico|css|js|webmanifest|woff|woff2)",
