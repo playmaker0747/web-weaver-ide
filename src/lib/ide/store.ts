@@ -43,10 +43,16 @@ interface IDEState {
 }
 
 const saveTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+let liveChannel: BroadcastChannel | null = null;
+function broadcastReload() {
+  if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+  if (!liveChannel) liveChannel = new BroadcastChannel("codeforge-live");
+  liveChannel.postMessage({ type: "reload" });
+}
 function scheduleSave(node: FileNode) {
   clearTimeout(saveTimers[node.id]);
   saveTimers[node.id] = setTimeout(() => {
-    void saveNode(node);
+    void saveNode(node).then(broadcastReload);
   }, 250);
 }
 
