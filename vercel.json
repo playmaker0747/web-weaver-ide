@@ -3,13 +3,6 @@
   "outputDirectory": "dist",
   "public": false,
   "framework": "vite",
-  "serverless": {
-    "default": {
-      "runtime": "nodejs20.x",
-      "memory": 3008,
-      "maxDuration": 60
-    }
-  },
   "rewrites": [
     {
       "source": "/api/:path*",
