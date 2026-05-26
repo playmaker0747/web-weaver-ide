@@ -1,20 +1,10 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".output/public",
-  "framework": "vite",
-  "functions": {
-    ".output/server/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/.output/server/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/.output/public/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
